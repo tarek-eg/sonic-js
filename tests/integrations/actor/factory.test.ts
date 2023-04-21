@@ -11,6 +11,7 @@ describe('createTokenActor', () => {
   test('should create a token actor', async () => {
     const actor = await createTokenActor({
       canisterId: 'aanaa-xaaaa-aaaah-aaeiq-cai',
+      isIcrc1: false,
     });
     expect(actor).toBeDefined();
   });

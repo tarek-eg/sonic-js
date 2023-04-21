@@ -1,4 +1,4 @@
-import { SwapIDL, Default, TokenIDL } from '@/declarations';
+import { SwapIDL, Default, TokenIDL, TokenIDLIcrc1 } from '@/declarations';
 import { ActorAdapter } from './adapter';
 
 /**
@@ -37,15 +37,18 @@ export const createSwapActor = ({
 export interface CreateTokenActorOptions {
   canisterId: string;
   actorAdapter?: ActorAdapter;
+  isIcrc1: boolean;
 }
 
 /**
  * Type of TokenActor.
  */
-export type TokenActor = ActorAdapter.Actor<TokenIDL.Token>;
+export type TokenActor =
+  | ActorAdapter.Actor<TokenIDL.Token>
+  | ActorAdapter.Actor<TokenIDLIcrc1.Token>;
 
 /**
- * Creates a DIP20 Token canister actor.
+ * Creates a DIP20 or ICRC1 Token canister actor.
  * If no option is provided, the actor will be created using the default canister options.
  * @param {CreateTokenActorOptions} options Options for creating the TokenActor
  * @returns {TokenActor} actor instance
@@ -53,6 +56,10 @@ export type TokenActor = ActorAdapter.Actor<TokenIDL.Token>;
 export const createTokenActor = ({
   canisterId,
   actorAdapter = new ActorAdapter(),
+  isIcrc1 = false,
 }: CreateTokenActorOptions): Promise<TokenActor> => {
+  if (isIcrc1) {
+    return actorAdapter.createActor(canisterId, TokenIDLIcrc1.factory);
+  }
   return actorAdapter.createActor(canisterId, TokenIDL.factory);
 };

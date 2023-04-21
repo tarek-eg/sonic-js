@@ -4,8 +4,17 @@ import { toBigNumber } from '@/utils';
 import { Actor } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import { getDeadline, parseUserLPBalances } from '.';
-import { ActorAdapter, createTokenActor, SwapActor } from '..';
+import { ActorAdapter, createTokenActor, SwapActor, TokenActor } from '..';
 import { parseSupportedTokenList, parseAllPairs } from './utils';
+
+const ICRC1_TOKENS = [
+  //'SNS-1',
+  'zfcdd-tqaaa-aaaaq-aaaga-cai',
+  //'CHAT',
+  '2ouva-viaaa-aaaaq-aaamq-cai',
+  //'ckBTC',
+  'mxzaz-hqaaa-aaaar-qaada-cai',
+];
 
 /**
  * Swap Canister Controller.
@@ -59,9 +68,15 @@ export class SwapCanisterController {
       : await this.getAgentPrincipal();
 
     const tokens = Object.values(this.tokenList as Token.MetadataList);
+    // const;
     const tokenBalancePromises = tokens.map((token) =>
-      createTokenActor({ canisterId: token.id })
-        .then((tokenActor) => tokenActor.balanceOf(principal))
+      createTokenActor({
+        canisterId: token.id,
+        isIcrc1: ICRC1_TOKENS.includes(token.id),
+      })
+        .then((tokenActor) => {
+          return getTokenBalanceFromIcrc1OrDip20(tokenActor, principal);
+        })
         .then((balance) => ({
           [token.id]: {
             token: toBigNumber(balance).applyDecimals(token.decimals),
@@ -107,11 +122,20 @@ export class SwapCanisterController {
     const tokenActor = await createTokenActor({
       canisterId: tokenId,
       actorAdapter: ActorAdapter.adapterOf(this.swapActor),
+      isIcrc1: ICRC1_TOKENS.includes(tokenId),
     });
-    const tokenDecimals = await tokenActor.decimals();
+    const tokenDecimals =
+      'decimals' in tokenActor
+        ? await tokenActor.decimals()
+        : await tokenActor.icrc1_decimals();
 
     const tokenBalance = toBigNumber(
-      await tokenActor.balanceOf(principal)
+      'balanceOf' in tokenActor
+        ? await tokenActor.balanceOf(principal)
+        : await tokenActor.icrc1_balance_of({
+            owner: principal,
+            subaccount: [],
+          })
     ).applyDecimals(tokenDecimals);
 
     const sonicBalance = toBigNumber(
@@ -173,6 +197,9 @@ export class SwapCanisterController {
     tokenId,
     amount,
   }: SwapCanisterController.ApproveParams): Promise<void> {
+    if (ICRC1_TOKENS.includes(tokenId)) {
+      throw Error("Icrc1 token doesn't support approve");
+    }
     const principal = await this.getAgentPrincipal();
 
     if (!this.tokenList) await this.getTokenList();
@@ -180,7 +207,11 @@ export class SwapCanisterController {
     const tokenActor = await createTokenActor({
       canisterId: tokenId,
       actorAdapter: ActorAdapter.adapterOf(this.swapActor),
+      isIcrc1: ICRC1_TOKENS.includes(tokenId),
     });
+    if (!('allowance' in tokenActor)) {
+      throw Error("Icrc1 token doesn't support approve");
+    }
 
     const swapPrincipal = Principal.fromText(Default.SWAP_CANISTER_ID);
     const parsedAmount = toBigNumber(amount).removeDecimals(
@@ -582,4 +613,16 @@ export namespace SwapCanisterController {
     amount: Types.Amount;
     slippage?: Types.Number;
   };
+}
+function getTokenBalanceFromIcrc1OrDip20(
+  tokenActor: TokenActor,
+  principal: Principal
+): Promise<bigint> {
+  if ('icrc1_balance_of' in tokenActor) {
+    return tokenActor.icrc1_balance_of({
+      owner: principal,
+      subaccount: [],
+    });
+  }
+  return tokenActor.balanceOf(principal);
 }
