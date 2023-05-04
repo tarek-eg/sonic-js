@@ -14,6 +14,8 @@ const ICRC1_TOKENS = [
   '2ouva-viaaa-aaaaq-aaamq-cai',
   //'ckBTC',
   'mxzaz-hqaaa-aaaar-qaada-cai',
+  // Ledger ICP
+  'ryjl3-tyaaa-aaaaa-aaaba-cai',
 ];
 
 /**
