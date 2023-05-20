@@ -10,7 +10,7 @@
     "@types/jest": "^27.4.0",
     "@typescript-eslint/eslint-plugin": "^5.10.1",
     "@typescript-eslint/parser": "^5.10.1",
-    "eslint": "^8.7.0",
+    "eslint": "^8.41.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-jest-dom": "^4.0.1",
     "eslint-plugin-prettier": "^4.0.0",
@@ -26,16 +26,19 @@
   },
   "scripts": {
     "prepare": "ts-patch install -s",
+    "ts": "tsc --noEmit --pretty --project tsconfig.json",
+    "lint": "eslint --ext .ts,.tsx,.js,.jsx src",
     "build": "tsc --project tsconfig.build.json",
     "test": "jest --watch",
     "test:ci": "jest --silent",
     "test:coverage": "jest --coverage",
+    "publish_to_github": "After you do the changes you need to build locally and push the build files to github repo",
     "docs": "npx typedoc  --readme none --disableSources --sort static-first --sort alphabetical --plugin typedoc-plugin-markdown --hideBreadcrumbs --out docs src/index.ts"
   },
   "dependencies": {
-    "@dfinity/agent": "^0.12.0",
-    "@dfinity/candid": "^0.12.0",
-    "@dfinity/principal": "^0.12.0",
+    "@dfinity/agent": "^0.15.6",
+    "@dfinity/candid": "^0.15.6",
+    "@dfinity/principal": "^0.15.6",
     "bignumber.js": "^9.0.2",
     "cross-fetch": "^3.1.5"
   }
